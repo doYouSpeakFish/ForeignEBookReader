@@ -1,26 +1,29 @@
 package com.example.foreignebookreader;
 
-import androidx.annotation.NonNull;
-import androidx.room.DatabaseConfiguration;
-import androidx.room.InvalidationTracker;
+import android.content.Context;
+
+import androidx.room.Database;
+import androidx.room.Room;
 import androidx.room.RoomDatabase;
-import androidx.sqlite.db.SupportSQLiteOpenHelper;
 
-public class AppDB extends RoomDatabase {
-    @NonNull
-    @Override
-    protected SupportSQLiteOpenHelper createOpenHelper(DatabaseConfiguration config) {
-        return null;
-    }
+import com.example.foreignebookreader.DbEntities.EntityBook;
+import com.example.foreignebookreader.DbEntities.EntityTranslation;
 
-    @NonNull
-    @Override
-    protected InvalidationTracker createInvalidationTracker() {
-        return null;
-    }
+@Database(entities = {EntityBook.class, EntityTranslation.class}, version = 1, exportSchema = false)
+public abstract class AppDB extends RoomDatabase {
 
-    @Override
-    public void clearAllTables() {
+    private static volatile AppDB INSTANCE;
 
+    public abstract AppDao appDao();
+
+    static AppDB getDatabase(final Context context) {
+        if (INSTANCE == null) {
+            synchronized (AppDB.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = Room.databaseBuilder(context.getApplicationContext(), AppDB.class, "appDb").build();
+                }
+            }
+        }
+        return INSTANCE;
     }
 }
