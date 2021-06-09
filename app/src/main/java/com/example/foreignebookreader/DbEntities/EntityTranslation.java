@@ -1,5 +1,6 @@
 package com.example.foreignebookreader.DbEntities;
 
+import androidx.annotation.NonNull;
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 
@@ -7,33 +8,36 @@ import androidx.room.Entity;
 public class EntityTranslation {
 
     @ColumnInfo(name = "text")
+    @NonNull
     private final String mText;
 
     @ColumnInfo(name = "sourceLang")
+    @NonNull
     private final String mSourceLang;
 
     @ColumnInfo(name = "targetLang")
+    @NonNull
     private final String mTargetLang;
 
     @ColumnInfo(name = "translation")
     private String mTranslation;
 
-    public EntityTranslation(String text, String sourceLang, String targetLang, String translation) {
+    public EntityTranslation(@NonNull String text, @NonNull String sourceLang, @NonNull String targetLang, String translation) {
         mText = text;
         mSourceLang = sourceLang;
         mTargetLang = targetLang;
         mTranslation = translation;
     }
 
-    public String getText() {
+    public @NonNull String getText() {
         return mText;
     }
 
-    public String getSourceLang() {
+    public @NonNull String getSourceLang() {
         return mSourceLang;
     }
 
-    public String getTargetLang() {
+    public @NonNull String getTargetLang() {
         return mTargetLang;
     }
 

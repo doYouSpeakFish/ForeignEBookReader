@@ -1,25 +1,41 @@
 package com.example.foreignebookreader;
 
 import android.app.Application;
+import android.content.Context;
+import android.net.Uri;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 import com.example.foreignebookreader.DbEntities.EntityTranslation;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import nl.siegmann.epublib.domain.Book;
+import nl.siegmann.epublib.epub.EpubReader;
+import nl.siegmann.epublib.util.IOUtil;
+
 public class AppRepository {
+
+    private final static String TAG = "AppRepository";
 
     private final AppDao mDao;
     private final ExecutorService mExecutorService;
+    private final Application mApplication;
 
     public AppRepository(Application application) {
         AppDB appDB = AppDB.getDatabase(application);
         mDao = appDB.appDao();
         mExecutorService = Executors.newFixedThreadPool(4);
+        mApplication = application;
     }
 
     public void insertBook(EntityBook entityBook) {
@@ -41,6 +57,51 @@ public class AppRepository {
     public LiveData<EntityTranslation> getTranslation(String text, String sourceLang, String targetLang) {
         //TODO get translation from server if not in DB
         return mDao.getTranslation(text, sourceLang, targetLang);
+    }
+
+    public void addBook(Uri uri) {
+        mExecutorService.execute(() -> {
+            try {
+                EpubReader epubReader = new EpubReader();
+                InputStream inputStream = mApplication.getContentResolver().openInputStream(uri);
+                byte[] fileBytes = IOUtil.toByteArray(inputStream);
+                inputStream = mApplication.getContentResolver().openInputStream(uri);
+                Book book = epubReader.readEpub(inputStream);
+                String title = book.getTitle();
+                Log.d(TAG, "addBook: fileBytes length: " + fileBytes.length);
+                String checksum = computeChecksum(fileBytes);
+                EntityBook entityBook = new EntityBook(title, checksum);
+                long id = mDao.insertBook(entityBook);
+                String filename = Long.toString(id);
+                FileOutputStream outputStream = mApplication.openFileOutput(filename, Context.MODE_PRIVATE);
+                outputStream.write(fileBytes);
+                outputStream.flush();
+                outputStream.close();
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private String computeChecksum(byte[] fileBytes) {
+        try {
+            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+            messageDigest.update(fileBytes);
+            byte[] checksumBytes = messageDigest.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : checksumBytes) {
+                String hex = Integer.toHexString(0xFF & b);
+                while (hex.length() < 2){
+                    hex = "0" + hex;
+                }
+                sb.append(hex);
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

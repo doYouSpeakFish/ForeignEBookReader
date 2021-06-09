@@ -14,7 +14,7 @@ import java.util.List;
 public interface AppDao {
 
     @Insert
-    public void insertBook(EntityBook entityBook);
+    public long insertBook(EntityBook entityBook);
 
     @Insert
     public void insertTranslation(EntityTranslation entityTranslation);
