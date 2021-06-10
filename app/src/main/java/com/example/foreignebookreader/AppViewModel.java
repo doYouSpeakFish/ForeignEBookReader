@@ -56,8 +56,8 @@ public class AppViewModel extends AndroidViewModel {
         return liveData;
     }
 
-    public void AddNewBook(Uri uri) {
-        mRepository.addBook(uri);
+    public void AddNewBook(Uri uri, MainActivity.ToastHandler toastHandler) {
+        mRepository.addBook(uri, toastHandler);
     }
 
 }

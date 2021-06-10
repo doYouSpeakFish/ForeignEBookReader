@@ -2,8 +2,10 @@ package com.example.foreignebookreader;
 
 import android.app.Application;
 import android.content.Context;
+import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
-import android.util.Log;
+import android.os.Handler;
+import android.os.Message;
 
 import androidx.lifecycle.LiveData;
 
@@ -59,7 +61,7 @@ public class AppRepository {
         return mDao.getTranslation(text, sourceLang, targetLang);
     }
 
-    public void addBook(Uri uri) {
+    public void addBook(Uri uri, MainActivity.ToastHandler toastHandler) {
         mExecutorService.execute(() -> {
             try {
                 EpubReader epubReader = new EpubReader();
@@ -68,7 +70,6 @@ public class AppRepository {
                 inputStream = mApplication.getContentResolver().openInputStream(uri);
                 Book book = epubReader.readEpub(inputStream);
                 String title = book.getTitle();
-                Log.d(TAG, "addBook: fileBytes length: " + fileBytes.length);
                 String checksum = computeChecksum(fileBytes);
                 EntityBook entityBook = new EntityBook(title, checksum);
                 long id = mDao.insertBook(entityBook);
@@ -80,6 +81,11 @@ public class AppRepository {
                 inputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (SQLiteConstraintException e) {
+                e.printStackTrace();
+                String text = "It looks like this book is already in your library";
+                Message message = toastHandler.obtainMessage(toastHandler.TOAST_TEXT, text);
+                message.sendToTarget();
             }
         });
     }
