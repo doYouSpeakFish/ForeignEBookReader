@@ -8,7 +8,6 @@ import android.os.Message;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -21,23 +20,18 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
+    public static final String EXTRA_ID = "id";
+
     private AppViewModel mViewModel;
-
-    ActivityResultLauncher<String> mGetBookUri = registerForActivityResult(new ActivityResultContracts.GetContent(),
-            new ActivityResultCallback<Uri>() {
-                @Override
-                public void onActivityResult(Uri result) {
-                    if (result != null){
-                        mViewModel.AddNewBook(result, mToastHandler);
-                    }
-                }
-            });
-
-    ToastHandler mToastHandler = new ToastHandler(Looper.getMainLooper());
+    private ActivityResultLauncher<String> mGetBookUri;
+    private ToastHandler mToastHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mGetBookUri = registerForActivityResult(new ActivityResultContracts.GetContent(), this::addBook);
+        mToastHandler = new ToastHandler(Looper.getMainLooper());
 
         ViewModelProvider.AndroidViewModelFactory viewModelFactory = ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication());
         mViewModel = new ViewModelProvider(this, viewModelFactory).get(AppViewModel.class);
@@ -53,6 +47,15 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
         mViewModel.getBooks().observe(this, adapter::submitList);
+
+        Uri uri = getIntent().getData();
+        addBook(uri);
+    }
+
+    private void addBook(Uri uri) {
+        if (uri != null){
+            mViewModel.AddNewBook(uri, mToastHandler);
+        }
     }
 
     class ToastHandler extends Handler {

@@ -26,38 +26,23 @@ public class AppViewModel extends AndroidViewModel {
 
     private final AppRepository mRepository;
 
+    private EntityBook mSelectedBook;
+
     public AppViewModel(@NonNull Application application) {
         super(application);
         mRepository = new AppRepository(application);
     }
 
     public LiveData<List<EntityBook>> getBooks() {
-        MediatorLiveData<List<EntityBook>> liveData = new MediatorLiveData<>();
-        liveData.addSource(mRepository.getBooks(), entityBooks -> {
-            EpubReader epubReader = new EpubReader();
-            for (EntityBook entityBook : entityBooks) {
-                try {
-                    for (String bookFileName : getApplication().fileList()) {
-                        Log.d(TAG, "getBooks: book file: " + bookFileName);
-                    }
-                    String filepath = Long.toString(entityBook.getId());
-                    Log.d(TAG, "getBooks: attempted filepath: " + filepath);
-                    InputStream fileInputStream = getApplication().getApplicationContext().openFileInput(filepath);
-                    Log.d(TAG, "getBooks: file stream: " + fileInputStream.toString());
-                    Log.d(TAG, "getBooks: file available? " + fileInputStream.available());
-                    Book book = epubReader.readEpub(fileInputStream);
-                    entityBook.setBook(book);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            liveData.postValue(entityBooks);
-        });
-        return liveData;
+        return mRepository.getBooks();
     }
 
     public void AddNewBook(Uri uri, MainActivity.ToastHandler toastHandler) {
         mRepository.addBook(uri, toastHandler);
+    }
+
+    public LiveData<EntityBook> getBook(long id) {
+        return mRepository.getBook(id);
     }
 
 }

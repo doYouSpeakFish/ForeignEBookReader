@@ -1,5 +1,6 @@
 package com.example.foreignebookreader;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
@@ -52,18 +53,28 @@ public class BookListAdapter extends ListAdapter<EntityBook, BookListAdapter.Boo
         }
     };
 
-    static class BookViewHolder extends RecyclerView.ViewHolder {
+    class BookViewHolder extends RecyclerView.ViewHolder {
 
         ImageView mImageView;
         TextView mTitle;
+        EntityBook mEntityBook;
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
             mTitle = itemView.findViewById(R.id.tv_book_title);
             mImageView = itemView.findViewById(R.id.img_book_cover);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent(itemView.getContext(), BookReaderActivity.class);
+                    intent.putExtra(MainActivity.EXTRA_ID, mEntityBook.getId());
+                    itemView.getContext().startActivity(intent);
+                }
+            });
         }
 
         void bindTo(EntityBook entityBook) {
+            mEntityBook = entityBook;
             mTitle.setText(entityBook.getTitle());
             if (entityBook.getBook() != null) {
                 Book book = entityBook.getBook();

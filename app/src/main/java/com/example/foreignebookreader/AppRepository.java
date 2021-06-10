@@ -4,10 +4,10 @@ import android.app.Application;
 import android.content.Context;
 import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
-import android.os.Handler;
 import android.os.Message;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 import com.example.foreignebookreader.DbEntities.EntityTranslation;
@@ -53,7 +53,18 @@ public class AppRepository {
     }
 
     public LiveData<List<EntityBook>> getBooks() {
-        return mDao.getBooks();
+        MediatorLiveData<List<EntityBook>> liveData = new MediatorLiveData<>();
+        liveData.addSource(mDao.getBooks(), entityBooks -> {
+            mExecutorService.execute(() -> {
+                EpubReader epubReader = new EpubReader();
+                for (EntityBook entityBook : entityBooks) {
+                    Book book = openBook(entityBook.getId(), epubReader);
+                    entityBook.setBook(book);
+                }
+                liveData.postValue(entityBooks);
+            });
+        });
+        return liveData;
     }
 
     public LiveData<EntityTranslation> getTranslation(String text, String sourceLang, String targetLang) {
@@ -111,4 +122,26 @@ public class AppRepository {
         return null;
     }
 
+    public LiveData<EntityBook> getBook(long id) {
+        MediatorLiveData<EntityBook> liveData = new MediatorLiveData<>();
+        liveData.addSource(mDao.getBook(id), entityBook -> {
+            mExecutorService.execute(() -> {
+                Book book = openBook(id, new EpubReader());
+                entityBook.setBook(book);
+                liveData.postValue(entityBook);
+            });
+        });
+        return liveData;
+    }
+
+    private Book openBook(long id, EpubReader epubReader) {
+        try {
+            String filepath = Long.toString(id);
+            InputStream fileInputStream = mApplication.openFileInput(filepath);
+            return epubReader.readEpub(fileInputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

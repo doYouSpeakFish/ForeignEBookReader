@@ -28,4 +28,6 @@ public interface AppDao {
             "AND targetLang = :targetLang")
     public LiveData<EntityTranslation> getTranslation(String text, String sourceLang, String targetLang);
 
+    @Query(value = "SELECT * FROM EntityBook WHERE id = :id LIMIT 1")
+    public LiveData<EntityBook> getBook(long id);
 }
