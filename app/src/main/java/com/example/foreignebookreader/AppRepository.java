@@ -79,6 +79,7 @@ public class AppRepository {
                 outputStream.flush();
                 outputStream.close();
                 inputStream.close();
+                // TODO should check whether there is space before saving file
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (SQLiteConstraintException e) {
