@@ -37,7 +37,7 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
 
     @Override
     public void onBindViewHolder(@NonNull SentenceViewHolder holder, int position) {
-
+        holder.bindTo(getItem(position));
     }
 
     static class SentenceViewHolder extends RecyclerView.ViewHolder {

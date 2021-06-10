@@ -21,6 +21,8 @@ import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import nl.siegmann.epublib.domain.Book;
 import nl.siegmann.epublib.domain.Resource;
@@ -32,6 +34,7 @@ public class AppViewModel extends AndroidViewModel {
     private static final String TAG = "AppViewModel";
 
     private final AppRepository mRepository;
+    private final ExecutorService mExecutorService;
 
     private String mCurrentBookChecksum;
     private List<String> mPages;
@@ -40,6 +43,7 @@ public class AppViewModel extends AndroidViewModel {
     public AppViewModel(@NonNull Application application) {
         super(application);
         mRepository = new AppRepository(application);
+        mExecutorService = Executors.newFixedThreadPool(4);
     }
 
     public LiveData<List<EntityBook>> getBooks() {
@@ -57,18 +61,30 @@ public class AppViewModel extends AndroidViewModel {
     public LiveData<List<String>> getPages(long id) {
         MediatorLiveData<List<String>> liveData = new MediatorLiveData<>();
         liveData.addSource(mRepository.getBook(id), entityBook -> {
-            // store checksum and compare to entity checksum to ensure same book isn't processed unnecessarily
-            if (!mCurrentBookChecksum.equals(entityBook.getChecksum()) || mPages == null || !mCurrentBookLanguage.equals(entityBook.getLanguageCode())) {
-                mCurrentBookChecksum = entityBook.getChecksum();
-                mCurrentBookLanguage = entityBook.getLanguageCode();
-                try {
-                    mPages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
-                } catch (IOException e) {
-                    Log.e(TAG, "getPages: problem extracting pages");
-                    e.printStackTrace();
+            mExecutorService.execute(() -> {
+                Log.d(TAG, "getPages: getting pages...");
+                if (entityBook == null) {
+                    Log.d(TAG, "getPages: can't get pages from null EntityBook");
+                    return;
                 }
-            }
-            liveData.postValue(mPages);
+                // store checksum and compare to entity checksum to ensure same book isn't processed unnecessarily
+                if (!entityBook.getChecksum().equals(mCurrentBookChecksum)
+                        || mPages == null
+                        || !entityBook.getLanguageCode().equals(mCurrentBookLanguage)) {
+                    mCurrentBookChecksum = entityBook.getChecksum();
+                    mCurrentBookLanguage = entityBook.getLanguageCode();
+                    try {
+                        Log.d(TAG, "getPages: extracting pages...");
+                        mPages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
+                        Log.d(TAG, "getPages: pages extracted successfully");
+                    } catch (IOException e) {
+                        Log.e(TAG, "getPages: problem extracting pages");
+                        e.printStackTrace();
+                    }
+                }
+                liveData.postValue(mPages);
+                Log.d(TAG, "getPages: finished getting pages");
+            });
         });
         return liveData;
     }
@@ -76,7 +92,13 @@ public class AppViewModel extends AndroidViewModel {
     public List<String> extractPages(Book book, String language) throws IOException {
         ArrayList<String> pages = new ArrayList<>();
         Spine spine = book.getSpine();
-        BreakIterator iterator = BreakIterator.getSentenceInstance(new Locale(language));
+        Locale locale;
+        if (language == null) {
+            locale = Locale.getDefault();
+        } else {
+            locale = new Locale(language);
+        }
+        BreakIterator iterator = BreakIterator.getSentenceInstance(locale);
         String line;
         InputStream inputStream;
         BufferedReader reader;
@@ -107,6 +129,10 @@ public class AppViewModel extends AndroidViewModel {
             }
         }
         return pages;
+    }
+
+    public void updateEntityBook(EntityBook entityBook) {
+        mRepository.updateEntityBook(entityBook);
     }
 
 }

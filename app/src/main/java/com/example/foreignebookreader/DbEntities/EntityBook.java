@@ -14,6 +14,9 @@ import nl.siegmann.epublib.domain.Book;
 @Entity(indices = {@Index(value = {"checksum"}, unique = true)})
 public class EntityBook {
 
+    @Ignore
+    public static final String UNKNOWN = "unknown";
+
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")
     private long mId;
@@ -36,9 +39,7 @@ public class EntityBook {
     @Ignore
     private Book mBook;
 
-    public EntityBook() {
-
-    }
+    public EntityBook() { }
 
     @Ignore
     public EntityBook(String title, String checksum) {
@@ -46,7 +47,7 @@ public class EntityBook {
         mCurrentLocation = 0;
         mLastReadTimestamp = Calendar.getInstance().getTimeInMillis();
         mTitle = title;
-        mLanguageCode = null;
+        mLanguageCode = UNKNOWN;
     }
 
     public long getId() {

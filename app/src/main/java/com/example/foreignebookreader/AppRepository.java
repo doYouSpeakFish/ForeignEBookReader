@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
 import android.os.Message;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
@@ -98,28 +99,28 @@ public class AppRepository {
                 String text = "It looks like this book is already in your library";
                 Message message = toastHandler.obtainMessage(toastHandler.TOAST_TEXT, text);
                 message.sendToTarget();
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                String text = "Sorry, there was a problem adding that book :(";
+                Message message = toastHandler.obtainMessage(toastHandler.TOAST_TEXT, text);
+                message.sendToTarget();
             }
         });
     }
 
-    private String computeChecksum(byte[] fileBytes) {
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-            messageDigest.update(fileBytes);
-            byte[] checksumBytes = messageDigest.digest();
-            StringBuilder sb = new StringBuilder();
-            for (byte b : checksumBytes) {
-                String hex = Integer.toHexString(0xFF & b);
-                while (hex.length() < 2){
-                    hex = "0" + hex;
-                }
-                sb.append(hex);
+    private String computeChecksum(byte[] fileBytes) throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("MD5");
+        messageDigest.update(fileBytes);
+        byte[] checksumBytes = messageDigest.digest();
+        StringBuilder sb = new StringBuilder();
+        for (byte b : checksumBytes) {
+            String hex = Integer.toHexString(0xFF & b);
+            while (hex.length() < 2){
+                hex = "0" + hex;
             }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            sb.append(hex);
         }
-        return null;
+        return sb.toString();
     }
 
     public LiveData<EntityBook> getBook(long id) {
@@ -143,5 +144,9 @@ public class AppRepository {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void updateEntityBook(EntityBook entityBook) {
+        mExecutorService.execute(() -> {mDao.updateEntityBook(entityBook);});
     }
 }

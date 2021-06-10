@@ -1,5 +1,6 @@
 package com.example.foreignebookreader;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
@@ -9,13 +10,19 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 
+import java.util.List;
+
 public class BookReaderActivity extends AppCompatActivity {
+
+    private final String TAG = "BookReaderActivity";
 
     AppViewModel mViewModel;
     EntityBook mEntityBook;
+    List<String> mPages;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +37,18 @@ public class BookReaderActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false);
         recyclerView.setLayoutManager(layoutManager);
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    int position = layoutManager.findFirstVisibleItemPosition();
+                    mEntityBook.setCurrentLocation(position);
+                    mViewModel.updateEntityBook(mEntityBook);
+                }
+
+            }
+        });
         new PagerSnapHelper().attachToRecyclerView(recyclerView);
 
         Intent intent = getIntent();
@@ -40,11 +59,21 @@ public class BookReaderActivity extends AppCompatActivity {
 
         mViewModel.getBook(id).observe(this, entityBook -> {
             mEntityBook = entityBook;
-            if (entityBook.getLanguageCode().equals("unknown")) {
+            if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
                 // TODO ask user for language
+            }
+            if (mPages != null) {
+                layoutManager.scrollToPosition(entityBook.getCurrentLocation());
             }
         });
 
-        mViewModel.getPages(id).observe(this, adapter::submitList);
+        mViewModel.getPages(id).observe(this, pages -> {
+            Log.d(TAG, "onCreate: received pages");
+            adapter.submitList(pages);
+            mPages = pages;
+            if (mEntityBook != null) {
+                layoutManager.scrollToPosition(mEntityBook.getCurrentLocation());
+            }
+        });
     }
 }
