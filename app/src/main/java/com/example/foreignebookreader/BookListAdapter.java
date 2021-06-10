@@ -53,7 +53,7 @@ public class BookListAdapter extends ListAdapter<EntityBook, BookListAdapter.Boo
         }
     };
 
-    class BookViewHolder extends RecyclerView.ViewHolder {
+    static class BookViewHolder extends RecyclerView.ViewHolder {
 
         ImageView mImageView;
         TextView mTitle;
