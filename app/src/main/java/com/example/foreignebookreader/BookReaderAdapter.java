@@ -1,16 +1,20 @@
 package com.example.foreignebookreader;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.SentenceViewHolder> {
+    
+    private static final String TAG = "BookReaderAdapter";
 
     public static final DiffUtil.ItemCallback<String> DIFF_CALLBACK = new DiffUtil.ItemCallback<String>() {
         @Override
@@ -51,26 +55,40 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
         TextView mTranslationTextView;
         AppViewModel mViewModel;
         BookReaderActivity mParentActivity;
+        View mItemView;
+        LiveData<String> mTranslationLiveData;
 
         public SentenceViewHolder(@NonNull View itemView, AppViewModel viewModel, BookReaderActivity parentActivity) {
             super(itemView);
             mPageTextView = itemView.findViewById(R.id.tv_page_text);
             mTranslationTextView = itemView.findViewById(R.id.tv_page_translation);
             mViewModel = viewModel;
+            mItemView = itemView;
             mParentActivity = parentActivity;
         }
 
         public void bindTo(String pageText) {
-            mTranslationTextView.setText("");
+            Log.d(TAG, "bindTo: clearing translation text for page: " + pageText);
             mTranslationTextView.setVisibility(View.INVISIBLE);
+            mTranslationTextView.setText("");
+            if (mTranslationTextView.getVisibility() == View.VISIBLE) {
+                Log.d(TAG, "bindTo: translation text is invisible for page: " + pageText);
+            } else {
+                Log.d(TAG, "bindTo: translation text is visible for page: " + pageText);
+            }
+            Log.d(TAG, "bindTo: setting page text");
             mPageTextView.setText(pageText);
-            itemView.setOnClickListener(v -> {
+            mItemView.setOnClickListener(v -> {
                 if (mTranslationTextView.getVisibility() == View.INVISIBLE) {
-                    mViewModel.getTranslation(pageText).observe(mParentActivity, translation -> {
+                    mTranslationLiveData = mViewModel.getTranslation(pageText);
+                    mTranslationLiveData.observe(mParentActivity, translation -> {
+                        Log.d(TAG, "bindTo: setting translation to visible for page: " + pageText);
                         mTranslationTextView.setText(translation);
                         mTranslationTextView.setVisibility(View.VISIBLE);
+                        mTranslationLiveData.removeObservers(mParentActivity);
                     });
                 } else {
+                    Log.d(TAG, "bindTo: setting translation to invisible for page: " + pageText);
                     mTranslationTextView.setVisibility(View.INVISIBLE);
                 }
             });
