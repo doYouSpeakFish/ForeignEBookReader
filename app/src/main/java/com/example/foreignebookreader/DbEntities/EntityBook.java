@@ -7,6 +7,8 @@ import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import nl.siegmann.epublib.domain.Book;
@@ -47,7 +49,7 @@ public class EntityBook {
         mCurrentLocation = 0;
         mLastReadTimestamp = Calendar.getInstance().getTimeInMillis();
         mTitle = title;
-        mLanguageCode = UNKNOWN;
+        mLanguageCode = "de"; // TODO should be set to UNKNOWN until user selects langauge. set to deu for testing whilst language select not available.
     }
 
     public long getId() {

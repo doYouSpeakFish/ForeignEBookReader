@@ -1,6 +1,7 @@
 package com.example.foreignebookreader;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
@@ -22,7 +23,6 @@ public class BookReaderActivity extends AppCompatActivity {
 
     AppViewModel mViewModel;
     EntityBook mEntityBook;
-    List<String> mPages;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,18 +62,10 @@ public class BookReaderActivity extends AppCompatActivity {
             if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
                 // TODO ask user for language
             }
-            if (mPages != null) {
+            mViewModel.getPages(entityBook).observe(this, pages -> {
+                adapter.submitList(pages);
                 layoutManager.scrollToPosition(entityBook.getCurrentLocation());
-            }
-        });
-
-        mViewModel.getPages(id).observe(this, pages -> {
-            Log.d(TAG, "onCreate: received pages");
-            adapter.submitList(pages);
-            mPages = pages;
-            if (mEntityBook != null) {
-                layoutManager.scrollToPosition(mEntityBook.getCurrentLocation());
-            }
+            });
         });
     }
 }

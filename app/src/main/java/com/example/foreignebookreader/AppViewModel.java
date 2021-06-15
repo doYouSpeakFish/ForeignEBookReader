@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 
@@ -40,6 +41,10 @@ public class AppViewModel extends AndroidViewModel {
     private List<String> mPages;
     private String mCurrentBookLanguage;
 
+    private EntityBook mCurrentBook;
+
+    private MutableLiveData<List<String>> mPagesLiveData;
+
     public AppViewModel(@NonNull Application application) {
         super(application);
         mRepository = new AppRepository(application);
@@ -55,38 +60,30 @@ public class AppViewModel extends AndroidViewModel {
     }
 
     public LiveData<EntityBook> getBook(long id) {
-        return mRepository.getBook(id);
+        MutableLiveData<EntityBook> liveData = new MutableLiveData<>();
+        mRepository.getBook(id, liveData::postValue);
+        return liveData;
     }
 
-    public LiveData<List<String>> getPages(long id) {
-        MediatorLiveData<List<String>> liveData = new MediatorLiveData<>();
-        liveData.addSource(mRepository.getBook(id), entityBook -> {
+    public LiveData<List<String>> getPages(EntityBook entityBook) {
+        // load pages if no book, different book, or language option changed
+        if (mCurrentBook == null || !mCurrentBook.getChecksum().equals(entityBook.getChecksum())
+                || !mCurrentBook.getLanguageCode().equals(entityBook.getLanguageCode())) {
+            mCurrentBook = entityBook;
+            mPagesLiveData = new MutableLiveData<>();
             mExecutorService.execute(() -> {
-                Log.d(TAG, "getPages: getting pages...");
-                if (entityBook == null) {
-                    Log.d(TAG, "getPages: can't get pages from null EntityBook");
-                    return;
+                try {
+                    Log.d(TAG, "getPages: extracting pages...");
+                    List<String> pages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
+                    mPagesLiveData.postValue(pages);
+                    Log.d(TAG, "getPages: pages extracted successfully");
+                } catch (IOException e) {
+                    Log.e(TAG, "getPages: problem extracting pages");
+                    e.printStackTrace();
                 }
-                // store checksum and compare to entity checksum to ensure same book isn't processed unnecessarily
-                if (!entityBook.getChecksum().equals(mCurrentBookChecksum)
-                        || mPages == null
-                        || !entityBook.getLanguageCode().equals(mCurrentBookLanguage)) {
-                    mCurrentBookChecksum = entityBook.getChecksum();
-                    mCurrentBookLanguage = entityBook.getLanguageCode();
-                    try {
-                        Log.d(TAG, "getPages: extracting pages...");
-                        mPages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
-                        Log.d(TAG, "getPages: pages extracted successfully");
-                    } catch (IOException e) {
-                        Log.e(TAG, "getPages: problem extracting pages");
-                        e.printStackTrace();
-                    }
-                }
-                liveData.postValue(mPages);
-                Log.d(TAG, "getPages: finished getting pages");
             });
-        });
-        return liveData;
+        }
+        return mPagesLiveData;
     }
 
     public List<String> extractPages(Book book, String language) throws IOException {

@@ -9,21 +9,32 @@ import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 import com.example.foreignebookreader.DbEntities.EntityTranslation;
 
+import org.jsoup.Jsoup;
+
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.BreakIterator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import nl.siegmann.epublib.domain.Book;
+import nl.siegmann.epublib.domain.Resource;
+import nl.siegmann.epublib.domain.Spine;
 import nl.siegmann.epublib.epub.EpubReader;
+import nl.siegmann.epublib.service.MediatypeService;
 import nl.siegmann.epublib.util.IOUtil;
 
 public class AppRepository {
@@ -123,16 +134,13 @@ public class AppRepository {
         return sb.toString();
     }
 
-    public LiveData<EntityBook> getBook(long id) {
-        MediatorLiveData<EntityBook> liveData = new MediatorLiveData<>();
-        liveData.addSource(mDao.getBook(id), entityBook -> {
-            mExecutorService.execute(() -> {
-                Book book = openBook(id, new EpubReader());
-                entityBook.setBook(book);
-                liveData.postValue(entityBook);
-            });
+    public void getBook(long id, Callback callback) {
+        mExecutorService.execute(() -> {
+            EntityBook entityBook = mDao.getBook(id);
+            Book book = openBook(id, new EpubReader());
+            entityBook.setBook(book);
+            callback.run(entityBook);
         });
-        return liveData;
     }
 
     private Book openBook(long id, EpubReader epubReader) {
@@ -149,4 +157,9 @@ public class AppRepository {
     public void updateEntityBook(EntityBook entityBook) {
         mExecutorService.execute(() -> {mDao.updateEntityBook(entityBook);});
     }
+
+    public interface Callback {
+        public void run(EntityBook entityBook);
+    }
+
 }
