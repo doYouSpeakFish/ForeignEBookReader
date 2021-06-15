@@ -181,7 +181,7 @@ public class AppRepository {
                     .addQueryParameter("format", "text")
                     .addQueryParameter("source", sourceLanguageCode)
                     .addQueryParameter("model", "nmt")
-                    .addQueryParameter("key", "AIzaSyChzslY7Oy8eP-B1xLm_IulN7f2vyLZZfo")
+                    .addQueryParameter("key", "AIzaSyChzslY7Oy8eP-B1xLm_IulN7f2vyLZZfo") // TODO must not share key. look into more secure way to access google APIs
                     .build()
                     .getAsJSONObject(new JSONObjectRequestListener() {
                         @Override
