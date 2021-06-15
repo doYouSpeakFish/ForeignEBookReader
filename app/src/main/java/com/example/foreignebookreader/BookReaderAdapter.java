@@ -61,6 +61,8 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
         }
 
         public void bindTo(String pageText) {
+            mTranslationTextView.setText("");
+            mTranslationTextView.setVisibility(View.INVISIBLE);
             mPageTextView.setText(pageText);
             itemView.setOnClickListener(v -> {
                 if (mTranslationTextView.getVisibility() == View.INVISIBLE) {
