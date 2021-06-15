@@ -23,6 +23,8 @@ public class BookReaderActivity extends AppCompatActivity {
 
     AppViewModel mViewModel;
     EntityBook mEntityBook;
+    BookReaderAdapter mAdapter;
+    LinearLayoutManager mLayoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,16 +35,16 @@ public class BookReaderActivity extends AppCompatActivity {
         mViewModel = new ViewModelProvider(this, viewModelFactory).get(AppViewModel.class);
 
         RecyclerView recyclerView = findViewById(R.id.rv_book_reader);
-        BookReaderAdapter adapter = new BookReaderAdapter();
-        recyclerView.setAdapter(adapter);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false);
-        recyclerView.setLayoutManager(layoutManager);
+        mAdapter = new BookReaderAdapter(mViewModel, this);
+        recyclerView.setAdapter(mAdapter);
+        mLayoutManager = new LinearLayoutManager(this, RecyclerView.HORIZONTAL, false);
+        recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
                 super.onScrollStateChanged(recyclerView, newState);
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    int position = layoutManager.findFirstVisibleItemPosition();
+                    int position = mLayoutManager.findFirstVisibleItemPosition();
                     mEntityBook.setCurrentLocation(position);
                     mViewModel.updateEntityBook(mEntityBook);
                 }
@@ -57,15 +59,33 @@ public class BookReaderActivity extends AppCompatActivity {
             finish();
         }
 
+        loadBook(id);
+    }
+
+    private void loadBook(long id) {
         mViewModel.getBook(id).observe(this, entityBook -> {
             mEntityBook = entityBook;
             if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
-                // TODO ask user for language
+                Log.d(TAG, "loadBook: language unknown. launching language select dialog");
+                String[] languages = Languages.getLanguages().keySet().toArray(new String[0]);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("What language is this book?");
+                builder.setItems(languages, (dialog, which) -> {
+                    mEntityBook.setLanguageCode(Languages.getLanguages().get(languages[which]));
+                    mViewModel.updateEntityBook(mEntityBook);
+                    Log.d(TAG, "loadBook: language selected. reloading pages");
+                    loadBook(id);
+                });
+                builder.show();
+            } else {
+                Log.d(TAG, "loadBook: language code = " + entityBook.getLanguageCode());
             }
             mViewModel.getPages(entityBook).observe(this, pages -> {
-                adapter.submitList(pages);
-                layoutManager.scrollToPosition(entityBook.getCurrentLocation());
+                mAdapter.submitList(pages);
+                mLayoutManager.scrollToPosition(mEntityBook.getCurrentLocation());
             });
         });
     }
+
 }

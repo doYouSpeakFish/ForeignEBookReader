@@ -49,7 +49,7 @@ public class EntityBook {
         mCurrentLocation = 0;
         mLastReadTimestamp = Calendar.getInstance().getTimeInMillis();
         mTitle = title;
-        mLanguageCode = "de"; // TODO should be set to UNKNOWN until user selects langauge. set to deu for testing whilst language select not available.
+        mLanguageCode = UNKNOWN;
     }
 
     public long getId() {

@@ -37,10 +37,6 @@ public class AppViewModel extends AndroidViewModel {
     private final AppRepository mRepository;
     private final ExecutorService mExecutorService;
 
-    private String mCurrentBookChecksum;
-    private List<String> mPages;
-    private String mCurrentBookLanguage;
-
     private EntityBook mCurrentBook;
 
     private MutableLiveData<List<String>> mPagesLiveData;
@@ -132,4 +128,7 @@ public class AppViewModel extends AndroidViewModel {
         mRepository.updateEntityBook(entityBook);
     }
 
+    public LiveData<String> getTranslation(String pageText) {
+        return mRepository.getTranslation(pageText, mCurrentBook.getLanguageCode(), "en"); // TODO allow user to select target language
+    }
 }
