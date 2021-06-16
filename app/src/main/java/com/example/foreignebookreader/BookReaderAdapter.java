@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
@@ -51,6 +52,7 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
 
     static class SentenceViewHolder extends RecyclerView.ViewHolder {
 
+        ConstraintLayout mPageLayout;
         TextView mPageTextView;
         TextView mTranslationTextView;
         AppViewModel mViewModel;
@@ -62,6 +64,7 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
             super(itemView);
             mPageTextView = itemView.findViewById(R.id.tv_page_text);
             mTranslationTextView = itemView.findViewById(R.id.tv_page_translation);
+            mPageLayout = itemView.findViewById(R.id.cl_page);
             mViewModel = viewModel;
             mItemView = itemView;
             mParentActivity = parentActivity;
@@ -71,14 +74,9 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
             Log.d(TAG, "bindTo: clearing translation text for page: " + pageText);
             mTranslationTextView.setVisibility(View.INVISIBLE);
             mTranslationTextView.setText("");
-            if (mTranslationTextView.getVisibility() == View.VISIBLE) {
-                Log.d(TAG, "bindTo: translation text is invisible for page: " + pageText);
-            } else {
-                Log.d(TAG, "bindTo: translation text is visible for page: " + pageText);
-            }
             Log.d(TAG, "bindTo: setting page text");
             mPageTextView.setText(pageText);
-            mItemView.setOnClickListener(v -> {
+            mPageLayout.setOnClickListener(v -> {
                 if (mTranslationTextView.getVisibility() == View.INVISIBLE) {
                     mTranslationLiveData = mViewModel.getTranslation(pageText);
                     mTranslationLiveData.observe(mParentActivity, translation -> {

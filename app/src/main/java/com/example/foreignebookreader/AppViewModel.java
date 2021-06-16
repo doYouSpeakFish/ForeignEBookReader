@@ -67,6 +67,7 @@ public class AppViewModel extends AndroidViewModel {
                 || !mCurrentBook.getLanguageCode().equals(entityBook.getLanguageCode())) {
             mCurrentBook = entityBook;
             mPagesLiveData = new MutableLiveData<>();
+            // TODO cache pages for quick loading of recently read books
             mExecutorService.execute(() -> {
                 try {
                     Log.d(TAG, "getPages: extracting pages...");
