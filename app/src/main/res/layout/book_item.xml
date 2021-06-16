@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -21,19 +22,35 @@
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
         android:textSize="15sp"
+        android:fontFamily="serif"
+        android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="@+id/img_book_cover"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/img_book_cover"
         app:layout_constraintTop_toTopOf="@+id/img_book_cover"
         app:layout_constraintVertical_bias="0.0" />
 
+    <TextView
+        android:id="@+id/tv_book_language"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_margin="12dp"
+        android:fontFamily="serif"
+        android:textColor="@color/black"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/img_book_cover"
+        app:layout_constraintTop_toBottomOf="@+id/tv_book_title"
+        app:layout_constraintVertical_bias="0.25" />
+
     <View
+        android:id="@+id/view"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginRight="20dp"
         android:background="@color/grey"
-        app:layout_constraintTop_toBottomOf="@+id/img_book_cover" />
+        app:layout_constraintTop_toBottomOf="@+id/img_book_cover"
+        tools:layout_editor_absoluteX="40dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

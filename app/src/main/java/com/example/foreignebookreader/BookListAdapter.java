@@ -57,32 +57,38 @@ public class BookListAdapter extends ListAdapter<EntityBook, BookListAdapter.Boo
 
         ImageView mImageView;
         TextView mTitle;
+        TextView mLanguage;
         EntityBook mEntityBook;
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
             mTitle = itemView.findViewById(R.id.tv_book_title);
+            mLanguage = itemView.findViewById(R.id.tv_book_language);
             mImageView = itemView.findViewById(R.id.img_book_cover);
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(itemView.getContext(), BookReaderActivity.class);
-                    intent.putExtra(MainActivity.EXTRA_ID, mEntityBook.getId());
-                    itemView.getContext().startActivity(intent);
-                }
+            itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(itemView.getContext(), BookReaderActivity.class);
+                intent.putExtra(MainActivity.EXTRA_ID, mEntityBook.getId());
+                itemView.getContext().startActivity(intent);
             });
         }
 
         void bindTo(EntityBook entityBook) {
             mEntityBook = entityBook;
             mTitle.setText(entityBook.getTitle());
+            String langCode = entityBook.getLanguageCode();
+            if (EntityBook.UNKNOWN.equals(langCode)) {
+                mLanguage.setText("Language: Unknown");
+            } else {
+                String language = Languages.getLanguageFromCode(langCode);
+                mLanguage.setText("Language: " + language);
+            }
             if (entityBook.getBook() != null) {
                 Book book = entityBook.getBook();
-                setCover(book);
+                displayBookCover(book);
             }
         }
 
-        private void setCover(Book book) {
+        private void displayBookCover(Book book) {
             if (book.getCoverImage() != null) {
                 try {
                     Bitmap cover = BitmapFactory.decodeStream(book.getCoverImage().getInputStream());
