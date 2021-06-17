@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.widget.Button;
+import android.widget.SearchView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -26,9 +27,13 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<String> mGetBookUri;
     private ToastHandler mToastHandler;
 
+    private SearchView mSearchView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mSearchView = findViewById(R.id.sv_book_select);
 
         mGetBookUri = registerForActivityResult(new ActivityResultContracts.GetContent(), this::addBook);
         mToastHandler = new ToastHandler(Looper.getMainLooper());

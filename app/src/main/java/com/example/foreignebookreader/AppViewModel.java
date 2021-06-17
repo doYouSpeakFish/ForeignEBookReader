@@ -99,18 +99,20 @@ public class AppViewModel extends AndroidViewModel {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i=0; i<spine.size(); i++) {
             Resource resource = spine.getResource(i);
+            Log.d(TAG, "extractPages: page: " + pages.size());
+            Log.d(TAG, "extractPages: resource href: " + resource.getHref());
             if (resource.getMediaType().equals(MediatypeService.XHTML)) {
                 inputStream = resource.getInputStream();
                 reader = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = reader.readLine()) != null) {
-                    if (line.contains("<html>")) {
+                    if (line.contains("<html")) {
                         stringBuilder.delete(0, stringBuilder.length());
                     }
 
                     stringBuilder.append(line);
 
                     if (line.contains("</html>")) {
-                        String html = stringBuilder.toString();
+                        String html = stringBuilder.toString(); // TODO break on paragraphs and headings rather than just using BreakIterator
                         String textContent = Jsoup.parse(html).text();
                         iterator.setText(textContent);
                         int start = iterator.first();
@@ -120,6 +122,7 @@ public class AppViewModel extends AndroidViewModel {
                         }
                     }
                 }
+                reader.close();
             }
         }
         return pages;
