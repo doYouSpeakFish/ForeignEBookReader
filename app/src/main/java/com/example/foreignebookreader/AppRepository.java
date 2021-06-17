@@ -2,6 +2,9 @@ package com.example.foreignebookreader;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.database.sqlite.SQLiteConstraintException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -9,6 +12,7 @@ import android.net.Uri;
 import android.os.Message;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 
@@ -17,6 +21,7 @@ import com.androidnetworking.error.ANError;
 import com.androidnetworking.interfaces.JSONObjectRequestListener;
 import com.example.foreignebookreader.DbEntities.EntityBook;
 import com.example.foreignebookreader.DbEntities.EntityTranslation;
+import com.google.common.io.BaseEncoding;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -180,15 +185,18 @@ public class AppRepository {
 
     public void translate(String text, String sourceLanguageCode, String targetLanguageCode, TranslateCallback callback) {
         if (checkInternetConnection()) {
+            String packageName = mApplication.getPackageName();
+            String signature = getSignature(mApplication.getPackageManager(), packageName);
             AndroidNetworking.post("https://translation.googleapis.com/language/translate/v2")
+                    .addHeaders("X-Android-Package", packageName)
+                    .addHeaders("X-Android-Cert", signature)
                     .addQueryParameter("q", text)
                     .addQueryParameter("target", targetLanguageCode)
                     .addQueryParameter("format", "text")
                     .addQueryParameter("source", sourceLanguageCode)
                     .addQueryParameter("model", "nmt")
-                    .addQueryParameter("key", mApplication.getResources().getString(R.string.api_key)) // TODO must not share key. look into more secure way to access google APIs
-                    .build()
-                    .getAsJSONObject(new JSONObjectRequestListener() {
+                    .addQueryParameter("key", mApplication.getResources().getString(R.string.api_key))
+                    .build().getAsJSONObject(new JSONObjectRequestListener() {
                         @Override
                         public void onResponse(JSONObject response) {
                             ArrayList<String> translations = new ArrayList<>();
@@ -211,10 +219,37 @@ public class AppRepository {
                         @Override
                         public void onError(ANError anError) {
                             callback.run(null, TranslateCallback.API_REQUEST_ERROR);
+                            anError.printStackTrace();
+                            Log.e(TAG, "onError: google api response: " + anError.getResponse().toString());
                         }
                     });
         } else {
             callback.run(null, TranslateCallback.NO_INTERNET);
+        }
+    }
+
+    private static String getSignature(@NonNull PackageManager packageManager, @NonNull String packageName) {
+        try {
+            PackageInfo packageInfo = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES);
+            if (packageInfo == null || packageInfo.signatures == null || packageInfo.signatures.length == 0 || packageInfo.signatures[0] == null) {
+                return null;
+            }
+            return signatureDigest(packageInfo.signatures[0]);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String signatureDigest(Signature sig) {
+        byte[] signature = sig.toByteArray();
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+            byte[] digest = md.digest(signature);
+            return BaseEncoding.base16().lowerCase().encode(digest);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
