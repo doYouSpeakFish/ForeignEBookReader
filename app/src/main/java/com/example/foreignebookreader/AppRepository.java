@@ -95,18 +95,23 @@ public class AppRepository {
     public void addBook(Uri uri, MainActivity.ToastHandler toastHandler) {
         mExecutorService.execute(() -> {
             try {
-                EpubReader epubReader = new EpubReader();
+
                 InputStream inputStream = mApplication.getContentResolver().openInputStream(uri);
                 byte[] fileBytes = IOUtil.toByteArray(inputStream);
+                inputStream.close();
+
                 inputStream = mApplication.getContentResolver().openInputStream(uri);
+                EpubReader epubReader = new EpubReader();
                 Book book = epubReader.readEpub(inputStream);
                 String title = book.getTitle();
                 String checksum = computeChecksum(fileBytes);
                 EntityBook entityBook = new EntityBook(title, checksum);
                 long id = mDao.insertBook(entityBook);
+
                 String filename = Long.toString(id);
                 FileOutputStream outputStream = mApplication.openFileOutput(filename, Context.MODE_PRIVATE);
                 outputStream.write(fileBytes);
+
                 outputStream.flush();
                 outputStream.close();
                 inputStream.close();
