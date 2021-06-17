@@ -48,4 +48,7 @@ dependencies {
 
     // Networking Library
     implementation 'com.amitshekhar.android:android-networking:1.0.2'
+
+    // Guava
+    implementation 'com.google.guava:guava:30.1.1-android'
 }
