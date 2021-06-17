@@ -120,6 +120,7 @@ public class AppViewModel extends AndroidViewModel {
                         }
                     }
                 }
+                reader.close();
             }
         }
         return pages;
