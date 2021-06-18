@@ -107,6 +107,7 @@ public class AppRepository {
                 inputStream = mApplication.getContentResolver().openInputStream(uri);
                 EpubReader epubReader = new EpubReader();
                 Book book = epubReader.readEpub(inputStream);
+                // TODO add author to entityBook
                 String title = book.getTitle();
                 String checksum = computeChecksum(fileBytes);
                 EntityBook entityBook = new EntityBook(title, checksum);
