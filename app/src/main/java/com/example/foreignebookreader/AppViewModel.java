@@ -177,16 +177,16 @@ public class AppViewModel extends AndroidViewModel {
                         // uses the sequence addnewlineaddnewline to indicate where to place a line seperator
                         html = html.replace("addnewline", "baddnewline"); // in case addnewlineaddnewline is already in the text, change it to something else
                         html = html.replace("<br>", "addnewlineaddnewline");
-                        String[] textTags = {"address", "article", "aside", "blockquote", "body", "dd", "details", "div", "dl", "dt", "fieldset",
+                        String[] tagsNeedingLinebreaks = {"address", "article", "aside", "blockquote", "body", "dd", "details", "div", "dl", "dt", "fieldset",
                                 "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "legend",
                                 "li", "menu", "nav", "ol", "p", "pre", "section", "summary", "ul", "table", "tbody", "tfoot", "thead", "tr", "caption"};
-                        for (String tagName : textTags) {
-                            String tag = "<" + tagName + ">";
-                            html = html.replace(tag, tag + "addnewlineaddnewline");
+                        for (String tagName : tagsNeedingLinebreaks) {
+                            String tag = "<" + tagName;
+                            html = html.replace(tag, "addnewlineaddnewline" + tag);
                         }
 
                         String textContent = Jsoup.parse(html).text();
-                        textContent = textContent.replace("addnewlineaddnewline", "\n"); // TODO still not always inserting newlines. Seems the newline is being removed somewhere
+                        textContent = textContent.replace("addnewlineaddnewline", "\n");
 
                         // change baddnewline back to addnewline
                         textContent = textContent.replace("baddnewline", "addnewline");
