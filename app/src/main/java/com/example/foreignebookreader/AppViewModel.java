@@ -164,6 +164,8 @@ public class AppViewModel extends AndroidViewModel {
                 while ((line = reader.readLine()) != null) {
                     if (line.contains("<html")) {
                         stringBuilder.delete(0, stringBuilder.length());
+                        int index = line.lastIndexOf("<html");
+                        line = line.substring(index);
                     }
 
                     stringBuilder.append(line);
@@ -184,7 +186,7 @@ public class AppViewModel extends AndroidViewModel {
                         }
 
                         String textContent = Jsoup.parse(html).text();
-                        textContent = textContent.replace("addnewlineaddnewline", "\n");
+                        textContent = textContent.replace("addnewlineaddnewline", "\n"); // TODO still not always inserting newlines. Seems the newline is being removed somewhere
 
                         // change baddnewline back to addnewline
                         textContent = textContent.replace("baddnewline", "addnewline");
