@@ -41,16 +41,63 @@ public class AppViewModel extends AndroidViewModel {
 
     private EntityBook mCurrentBook;
 
+    private String mSearchText;
+    private List<EntityBook> mEntityBooks;
+    private final MediatorLiveData<List<EntityBook>> mBooksLiveData;
+
     private MutableLiveData<List<String>> mPagesLiveData;
 
     public AppViewModel(@NonNull Application application) {
         super(application);
         mRepository = new AppRepository(application);
         mExecutorService = Executors.newFixedThreadPool(4);
+        mBooksLiveData = new MediatorLiveData<>();
+        mBooksLiveData.addSource(mRepository.getBooks(), entityBooks -> {
+            mEntityBooks = entityBooks;
+            mBooksLiveData.postValue(entityBooks);
+            Log.d(TAG, "getBooks: searchText: " + mSearchText);
+        });
     }
 
     public LiveData<List<EntityBook>> getBooks() {
-        return mRepository.getBooks();
+        return mBooksLiveData;
+    }
+
+    public void setSearchText(String searchText) {
+        if (searchText.equals(mSearchText)) {
+            return;
+        }
+        mSearchText = searchText;
+        List<EntityBook> books = getFilteredBooks(searchText);
+        mBooksLiveData.postValue(books);
+    }
+
+    public String getSearchText() {
+        return mSearchText;
+    }
+
+    private List<EntityBook> getFilteredBooks(String searchText) {
+        if (mEntityBooks == null) {
+            return null;
+        }
+        if (searchText.equals("")) {
+            return mEntityBooks;
+        }
+        ArrayList<EntityBook> filteredBooks = new ArrayList<>();
+        for (EntityBook book : mEntityBooks) {
+            String langCode = book.getLanguageCode();
+            String language;
+            if (langCode.equals(EntityBook.UNKNOWN)) {
+                language = EntityBook.UNKNOWN;
+            } else {
+                language = Languages.getLanguageFromCode(langCode);
+            }
+            if (book.getTitle().toLowerCase().contains(searchText.toLowerCase())
+                    || language.toLowerCase().contains(searchText.toLowerCase())) {
+                filteredBooks.add(book);
+            }
+        }
+        return filteredBooks;
     }
 
     public void AddNewBook(Uri uri, MainActivity.ToastHandler toastHandler) {
