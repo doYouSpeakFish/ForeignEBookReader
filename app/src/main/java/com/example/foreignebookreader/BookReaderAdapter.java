@@ -71,22 +71,18 @@ public class BookReaderAdapter extends ListAdapter<String, BookReaderAdapter.Sen
         }
 
         public void bindTo(String pageText) {
-            Log.d(TAG, "bindTo: clearing translation text for page: " + pageText);
             mTranslationTextView.setVisibility(View.INVISIBLE);
             mTranslationTextView.setText("");
-            Log.d(TAG, "bindTo: setting page text");
             mPageTextView.setText(pageText);
             mPageLayout.setOnClickListener(v -> {
                 if (mTranslationTextView.getVisibility() == View.INVISIBLE) {
                     mTranslationLiveData = mViewModel.getTranslation(pageText);
                     mTranslationLiveData.observe(mParentActivity, translation -> {
-                        Log.d(TAG, "bindTo: setting translation to visible for page: " + pageText);
                         mTranslationTextView.setText(translation);
                         mTranslationTextView.setVisibility(View.VISIBLE);
                         mTranslationLiveData.removeObservers(mParentActivity);
                     });
                 } else {
-                    Log.d(TAG, "bindTo: setting translation to invisible for page: " + pageText);
                     mTranslationTextView.setVisibility(View.INVISIBLE);
                 }
             });

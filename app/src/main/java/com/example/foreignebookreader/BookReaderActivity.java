@@ -15,6 +15,7 @@ import android.util.Log;
 
 import com.example.foreignebookreader.DbEntities.EntityBook;
 
+import java.util.Calendar;
 import java.util.List;
 
 public class BookReaderActivity extends AppCompatActivity {
@@ -64,6 +65,13 @@ public class BookReaderActivity extends AppCompatActivity {
 
     private void loadBook(long id) {
         mViewModel.getBook(id).observe(this, entityBook -> {
+            if (entityBook != null) {
+                if (mEntityBook == null || entityBook.getId() != mEntityBook.getId()) {
+                    entityBook.setLastReadTimestamp(Calendar.getInstance().getTimeInMillis());
+                    mViewModel.updateEntityBook(entityBook);
+                    // TODO timestamp should be updated in viewModel
+                }
+            }
             mEntityBook = entityBook;
             if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
                 Log.d(TAG, "loadBook: language unknown. launching language select dialog");

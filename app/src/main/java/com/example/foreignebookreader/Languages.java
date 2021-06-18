@@ -1,6 +1,7 @@
 package com.example.foreignebookreader;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 
 public class Languages {
 
@@ -115,6 +116,8 @@ public class Languages {
         CODE_FROM_LANGUAGE.put("Yiddish", "yi");
         CODE_FROM_LANGUAGE.put("Yoruba", "yo");
         CODE_FROM_LANGUAGE.put("Zulu", "zu");
+        // CODE_FROM_LANGUAGE.put("unknown", null);
+        // TODO add unknown to this class instead of using constant in EntityBook class
         for (String language : CODE_FROM_LANGUAGE.keySet()) {
             LANGUAGE_FROM_CODE.put(CODE_FROM_LANGUAGE.get(language), language);
         }

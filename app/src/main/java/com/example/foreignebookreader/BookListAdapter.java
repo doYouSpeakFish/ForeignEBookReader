@@ -96,6 +96,8 @@ public class BookListAdapter extends ListAdapter<EntityBook, BookListAdapter.Boo
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            } else {
+                mImageView.setImageBitmap(null); // TODO set image placeholder
             }
         }
 

@@ -20,7 +20,7 @@ public interface AppDao {
     @Insert
     public void insertTranslation(EntityTranslation entityTranslation);
 
-    @Query(value = "SELECT * FROM EntityBook")
+    @Query(value = "SELECT * FROM EntityBook ORDER BY lastReadTimeStamp DESC")
     public LiveData<List<EntityBook>> getBooks();
 
     @Query(value = "SELECT * FROM EntityTranslation " +
