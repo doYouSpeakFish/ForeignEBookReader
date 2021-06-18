@@ -99,15 +99,19 @@ public class AppViewModel extends AndroidViewModel {
         InputStream inputStream;
         BufferedReader reader;
         StringBuilder stringBuilder = new StringBuilder();
+        ArrayList<String> resourceHrefs = new ArrayList<>();
+        ArrayList<Integer> resourceStartIndices = new ArrayList<>();
         for (int i=0; i<spine.size(); i++) {
             Resource resource = spine.getResource(i);
             Log.d(TAG, "extractPages: page: " + pages.size());
             Log.d(TAG, "extractPages: resource href: " + resource.getHref());
+            resourceHrefs.add(resource.getHref());
+            resourceStartIndices.add(pages.size());
             if (resource.getMediaType().equals(MediatypeService.XHTML)) {
                 // TODO handle different media types
                 // TODO keep html so book formatting can be preserved. Either change to full pages of text, or split html into sentences whilst keeping tags for each sentence correct.
                 // Consider using BreakIterator with custom CharacterIterator for html that skips tags.
-                // May not work, depends on whether BreakIterator tracks index itself, or asks CharacterIterato
+                // May not work, depends on whether BreakIterator tracks index itself, or asks CharacterIterator
                 inputStream = resource.getInputStream();
                 reader = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = reader.readLine()) != null) {
@@ -121,6 +125,8 @@ public class AppViewModel extends AndroidViewModel {
                         String html = stringBuilder.toString();
 
                         // Add new lines that Jsoup text() method removes or fails to add
+                        // uses the sequence addnewlineaddnewline to indicate where to place a line seperator
+                        html = html.replace("addnewline", "baddnewline"); // in case addnewlineaddnewline is already in the text, change it to something else
                         html = html.replace("<br>", "addnewlineaddnewline");
                         String[] textTags = {"address", "article", "aside", "blockquote", "body", "dd", "details", "div", "dl", "dt", "fieldset",
                                 "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "legend",
@@ -132,6 +138,9 @@ public class AppViewModel extends AndroidViewModel {
 
                         String textContent = Jsoup.parse(html).text();
                         textContent = textContent.replace("addnewlineaddnewline", "\n");
+
+                        // change baddnewline back to addnewline
+                        textContent = textContent.replace("baddnewline", "addnewline");
 
                         // Break text into sentences
                         iterator.setText(textContent);
