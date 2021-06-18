@@ -44,7 +44,6 @@ import nl.siegmann.epublib.util.IOUtil;
 public class AppRepository {
 
     private final static String TAG = "AppRepository";
-    private final static String NO_INTERNET = "No internet connection! Cannot be translated!";
 
     private final AppDao mDao;
     private final ExecutorService mExecutorService;
@@ -211,7 +210,7 @@ public class AppRepository {
                                 }
                             } catch (JSONException e) {
                                 e.printStackTrace();
-                                Log.d(TAG, "onResponse: JSONException from response: " + response.toString());
+                                Log.e(TAG, "onResponse: JSONException from response: " + response.toString());
                                 callback.run(null, TranslateCallback.JSON_ERROR);
                             }
                         }

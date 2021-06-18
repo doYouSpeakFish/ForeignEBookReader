@@ -13,6 +13,8 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.foreignebookreader.DbEntities.EntityBook;
 
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -102,6 +104,10 @@ public class AppViewModel extends AndroidViewModel {
             Log.d(TAG, "extractPages: page: " + pages.size());
             Log.d(TAG, "extractPages: resource href: " + resource.getHref());
             if (resource.getMediaType().equals(MediatypeService.XHTML)) {
+                // TODO handle different media types
+                // TODO keep html so book formatting can be preserved. Either change to full pages of text, or split html into sentences whilst keeping tags for each sentence correct.
+                // Consider using BreakIterator with custom CharacterIterator for html that skips tags.
+                // May not work, depends on whether BreakIterator tracks index itself, or asks CharacterIterato
                 inputStream = resource.getInputStream();
                 reader = new BufferedReader(new InputStreamReader(inputStream));
                 while ((line = reader.readLine()) != null) {
@@ -112,13 +118,30 @@ public class AppViewModel extends AndroidViewModel {
                     stringBuilder.append(line);
 
                     if (line.contains("</html>")) {
-                        String html = stringBuilder.toString(); // TODO break on paragraphs and headings rather than just using BreakIterator
+                        String html = stringBuilder.toString();
+
+                        // Add new lines that Jsoup text() method removes or fails to add
+                        html = html.replace("<br>", "addnewlineaddnewline");
+                        String[] textTags = {"address", "article", "aside", "blockquote", "body", "dd", "details", "div", "dl", "dt", "fieldset",
+                                "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hr", "html", "legend",
+                                "li", "menu", "nav", "ol", "p", "pre", "section", "summary", "ul", "table", "tbody", "tfoot", "thead", "tr", "caption"};
+                        for (String tagName : textTags) {
+                            String tag = "<" + tagName + ">";
+                            html = html.replace(tag, tag + "addnewlineaddnewline");
+                        }
+
                         String textContent = Jsoup.parse(html).text();
+                        textContent = textContent.replace("addnewlineaddnewline", "\n");
+
+                        // Break text into sentences
                         iterator.setText(textContent);
                         int start = iterator.first();
                         for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
                             String text = textContent.substring(start, end);
-                            pages.add(text);
+                            text = text.trim();
+                            if (!text.equals("")) {
+                                pages.add(text);
+                            }
                         }
                     }
                 }
