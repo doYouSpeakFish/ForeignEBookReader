@@ -152,13 +152,14 @@ public class AppRepository {
         return sb.toString();
     }
 
-    public void getBook(long id, GetBookCallback callback) {
-        mExecutorService.execute(() -> {
-            EntityBook entityBook = mDao.getBook(id);
+    public LiveData<EntityBook> getBook(long id) {
+        MediatorLiveData<EntityBook> liveData = new MediatorLiveData<>();
+        liveData.addSource(mDao.getBook(id), entityBook -> {
             Book book = openBook(id, new EpubReader());
             entityBook.setBook(book);
-            callback.run(entityBook);
+            liveData.postValue(entityBook);
         });
+        return liveData;
     }
 
     private Book openBook(long id, EpubReader epubReader) {
@@ -186,7 +187,12 @@ public class AppRepository {
     public void translate(String text, String sourceLanguageCode, String targetLanguageCode, TranslateCallback callback) {
         if (checkInternetConnection()) {
             String packageName = mApplication.getPackageName();
+            Log.d(TAG, "translate: packageName: " + packageName);
             String signature = getSignature(mApplication.getPackageManager(), packageName);
+            Log.d(TAG, "translate: signature: " + signature);
+            Log.d(TAG, "translate: text: " + text);
+            Log.d(TAG, "translate: sourceLang: " + sourceLanguageCode);
+            Log.d(TAG, "translate: targetLang: " + targetLanguageCode);
             AndroidNetworking.post("https://translation.googleapis.com/language/translate/v2")
                     .addHeaders("X-Android-Package", packageName)
                     .addHeaders("X-Android-Cert", signature)

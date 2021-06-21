@@ -30,7 +30,7 @@ public interface AppDao {
     public LiveData<EntityTranslation> getTranslation(String text, String sourceLang, String targetLang);
 
     @Query(value = "SELECT * FROM EntityBook WHERE id = :id LIMIT 1")
-    public EntityBook getBook(long id);
+    public LiveData<EntityBook> getBook(long id);
 
     @Update
     void updateEntityBook(EntityBook entityBook);
