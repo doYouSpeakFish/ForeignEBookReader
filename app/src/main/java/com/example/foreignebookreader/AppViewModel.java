@@ -13,8 +13,6 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.foreignebookreader.DbEntities.EntityBook;
 
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +45,10 @@ public class AppViewModel extends AndroidViewModel {
     private final MediatorLiveData<List<EntityBook>> mBooksLiveData;
 
     private MutableLiveData<List<String>> mPagesLiveData;
+
+    private MediatorLiveData<EntityBook> mBookLiveData;
+
+    private BookData mCurrentBookData;
 
     public AppViewModel(@NonNull Application application) {
         super(application);
@@ -104,32 +107,44 @@ public class AppViewModel extends AndroidViewModel {
         mRepository.addBook(uri, toastHandler);
     }
 
-    public LiveData<EntityBook> getBook(long id) {
-        MutableLiveData<EntityBook> liveData = new MutableLiveData<>();
-        mRepository.getBook(id, liveData::postValue);
-        return liveData;
-    }
+    /**
+     * For communicating information about the book with a BookReaderActivity. The lastReadTimeStamp is also updated by this method.
+     * @param id the id of a bookEntity in the database
+     * @return A BookData objects that uses liveData objects to post the bookEntity and the pages of the book for the supplied id
+     * whenever a new book is requested and whenever the language of the book is changed. The live data objects will not post when
+     * the current location, the title, or the last read timestamp change. This prevents excessive reloading of the book pages.
+     */
+    public BookData getBook(long id) {
+        if (mCurrentBookData == null || mCurrentBook.getId() != id){
+            MediatorLiveData<EntityBook> bookLiveData = new MediatorLiveData<>();
+            MutableLiveData<List<String>> pagesLiveData = new MutableLiveData<>();
+            mCurrentBookData = new BookData(bookLiveData, pagesLiveData);
+            bookLiveData.addSource(mRepository.getBook(id), entityBook -> {
+                if (entityBook != null) {
+                    if (mCurrentBook == null
+                            || mCurrentBook.getId() != entityBook.getId()
+                            || !mCurrentBook.getLanguageCode().equals(entityBook.getLanguageCode())) {
+                        mCurrentBook = entityBook;
+                        mCurrentBook.setLastReadTimestamp(Calendar.getInstance().getTimeInMillis());
+                        mRepository.updateEntityBook(mCurrentBook);
+                        bookLiveData.postValue(mCurrentBook);
 
-    public LiveData<List<String>> getPages(EntityBook entityBook) {
-        // load pages if no book, different book, or language option changed
-        if (mCurrentBook == null || !mCurrentBook.getChecksum().equals(entityBook.getChecksum())
-                || !mCurrentBook.getLanguageCode().equals(entityBook.getLanguageCode())) {
-            mCurrentBook = entityBook;
-            mPagesLiveData = new MutableLiveData<>();
-            // TODO cache pages for quick loading of recently read books
-            mExecutorService.execute(() -> {
-                try {
-                    Log.d(TAG, "getPages: extracting pages...");
-                    List<String> pages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
-                    mPagesLiveData.postValue(pages);
-                    Log.d(TAG, "getPages: pages extracted successfully");
-                } catch (IOException e) {
-                    Log.e(TAG, "getPages: problem extracting pages");
-                    e.printStackTrace();
+                        mExecutorService.execute(() -> {
+                            try {
+                                Log.d(TAG, "getPages: extracting pages...");
+                                List<String> pages = extractPages(entityBook.getBook(), entityBook.getLanguageCode());
+                                pagesLiveData.postValue(pages);
+                                Log.d(TAG, "getPages: pages extracted successfully");
+                            } catch (IOException e) {
+                                Log.e(TAG, "getPages: problem extracting pages");
+                                e.printStackTrace();
+                            }
+                        });
+                    }
                 }
             });
         }
-        return mPagesLiveData;
+        return mCurrentBookData;
     }
 
     public List<String> extractPages(Book book, String language) throws IOException {
@@ -215,5 +230,24 @@ public class AppViewModel extends AndroidViewModel {
 
     public LiveData<String> getTranslation(String pageText) {
         return mRepository.getTranslation(pageText, mCurrentBook.getLanguageCode(), "en"); // TODO allow user to select target language
+    }
+
+    public class BookData {
+
+        private final LiveData<EntityBook> mBookLiveData;
+        private final LiveData<List<String>> mPagesLiveData;
+
+        public BookData(LiveData<EntityBook> bookLiveData, LiveData<List<String>> pagesLiveData) {
+            mBookLiveData = bookLiveData;
+            mPagesLiveData = pagesLiveData;
+        }
+
+        public LiveData<EntityBook> getBookLiveData() {
+            return mBookLiveData;
+        }
+
+        public LiveData<List<String>> getPagesLiveData() {
+            return mPagesLiveData;
+        }
     }
 }

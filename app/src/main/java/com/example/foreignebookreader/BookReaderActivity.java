@@ -48,6 +48,7 @@ public class BookReaderActivity extends AppCompatActivity {
                     int position = mLayoutManager.findFirstVisibleItemPosition();
                     mEntityBook.setCurrentLocation(position);
                     mViewModel.updateEntityBook(mEntityBook);
+                    // TODO set current location in the viewModel
                 }
 
             }
@@ -64,36 +65,38 @@ public class BookReaderActivity extends AppCompatActivity {
     }
 
     private void loadBook(long id) {
-        mViewModel.getBook(id).observe(this, entityBook -> {
+        AppViewModel.BookData bookData = mViewModel.getBook(id);
+
+        bookData.getBookLiveData().observe(this, entityBook -> {
             if (entityBook != null) {
-                if (mEntityBook == null || entityBook.getId() != mEntityBook.getId()) {
-                    entityBook.setLastReadTimestamp(Calendar.getInstance().getTimeInMillis());
-                    mViewModel.updateEntityBook(entityBook);
-                    // TODO timestamp should be updated in viewModel
+                mEntityBook = entityBook;
+                if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
+                    launchLanguageSelectDialog();
+                } else {
+                    Log.d(TAG, "loadBook: language code = " + entityBook.getLanguageCode());
                 }
             }
-            mEntityBook = entityBook;
-            if (entityBook.getLanguageCode().equals(EntityBook.UNKNOWN)) {
-                Log.d(TAG, "loadBook: language unknown. launching language select dialog");
-                String[] languages = Languages.getLanguages().keySet().toArray(new String[0]);
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("What language is this book?");
-                builder.setItems(languages, (dialog, which) -> {
-                    mEntityBook.setLanguageCode(Languages.getLanguages().get(languages[which]));
-                    mViewModel.updateEntityBook(mEntityBook);
-                    Log.d(TAG, "loadBook: language selected. reloading pages");
-                    loadBook(id);
-                });
-                builder.show();
-            } else {
-                Log.d(TAG, "loadBook: language code = " + entityBook.getLanguageCode());
-            }
-            mViewModel.getPages(entityBook).observe(this, pages -> {
-                mAdapter.submitList(pages);
-                mLayoutManager.scrollToPosition(mEntityBook.getCurrentLocation());
-            });
         });
+
+        bookData.getPagesLiveData().observe(this, pages -> {
+            mAdapter.submitList(pages);
+            mLayoutManager.scrollToPosition(mEntityBook.getCurrentLocation());
+        });
+    }
+
+    private void launchLanguageSelectDialog() {
+        Log.d(TAG, "loadBook: language unknown. launching language select dialog");
+        String[] languages = Languages.getLanguages().keySet().toArray(new String[0]);
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("What language is this book?");
+        builder.setItems(languages, (dialog, which) -> {
+            Log.d(TAG, "loadBook: setting language to " + languages[which]);
+            mEntityBook.setLanguageCode(Languages.getLanguages().get(languages[which]));
+            mViewModel.updateEntityBook(mEntityBook);
+            Log.d(TAG, "loadBook: language selected. reloading pages");
+        });
+        builder.show();
     }
 
 }
